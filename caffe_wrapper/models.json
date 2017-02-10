@@ -1,0 +1,23 @@
+{
+  "name": "open-nsfw",
+  "transformer": [{
+    "method": "set_transpose",
+    "parameters": ["2, 0, 1"]
+  }, {
+    "method": "set_mean",
+    "parameters": ["np.array([104, 117, 123])"]
+  }, {
+    "method": "set_raw_scale",
+    "parameters": ["255"]
+  }, {
+    "method": "set_channel_swap",
+    "parameters": ["(2, 1, 0)"]
+  }],
+  "preprocess": [{
+    "method": "resize",
+    "parameters": ["(256, 256)"]
+  }, {
+    "method": "crop",
+    "parameters": []
+  }]
+}

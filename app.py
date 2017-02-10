@@ -6,7 +6,8 @@ import threading
 import argparse
 import re
 import cgi
-import models.open_nsfw as nsfw
+import caffe_wrapper.forward as nsfw
+#import models.open_nsfw as nsfw
 import ast
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
@@ -19,9 +20,9 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
       content_len = int(self.headers.getheader('content-length', 0))
       post_body = self.rfile.read(content_len)
       input = ast.literal_eval(post_body)
-      yHat = nsfw.run(input)
+      yHat = nsfw.run(input, "image", (256, 256, 3))
 
-      self.wfile.write("{\"prediction\":%s}" % yHat)
+      self.wfile.write('[%s]' % ','.join(str(e) for e in yHat))
     else:
       self.send_response(403)
       self.send_header('Content-Type', 'application/json')
