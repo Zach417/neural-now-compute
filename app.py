@@ -12,22 +12,18 @@ import ast
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
   def do_POST(self):
-    if None != re.search('/open-nsfw/*', self.path):
-      self.send_response(200)
-      self.send_header('Content-Type', 'application/json')
-      self.end_headers()
+    self.send_response(200)
+    self.send_header('Content-Type', 'application/json')
+    self.end_headers()
 
-      content_len = int(self.headers.getheader('content-length', 0))
-      post_body = self.rfile.read(content_len)
-      input = ast.literal_eval(post_body)
-      yHat = nsfw.run(input, "image", (256, 256, 3))
+    content_len = int(self.headers.getheader('content-length', 0))
+    post_body = self.rfile.read(content_len)
+    input = ast.literal_eval(post_body)
 
-      self.wfile.write('[%s]' % ','.join(str(e) for e in yHat))
-    else:
-      self.send_response(403)
-      self.send_header('Content-Type', 'application/json')
-      self.end_headers()
-    return
+    # /compute/open-nsfw
+    name = self.path.split("/")[2]
+    yHat = nsfw.run(name, input, "image", (256, 256, 3))
+    self.wfile.write('[%s]' % ','.join(str(e) for e in yHat))
  
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
   allow_reuse_address = True

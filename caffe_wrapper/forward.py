@@ -26,10 +26,10 @@ def compute(input, transformer, net):
     all_outputs = net.forward_all(blobs=net.outputs, **{input_name: input})
     return all_outputs[net.outputs[0]][0].astype(float)
 
-def run(input, type, size):
+def run(name, input, type, size):
     # Pre-load caffe model
-    model_def = '/home/ec2-user/server/models/open_nsfw/deploy.prototxt'
-    pretrained_model = '/home/ec2-user/server/models/open_nsfw/open_nsfw.caffemodel'
+    model_def = '/home/ec2-user/server/models/%s/deploy.prototxt' % name
+    pretrained_model = '/home/ec2-user/server/models/%s/deploy.caffemodel' % name
     net = caffe.Net(model_def, pretrained_model, caffe.TEST)
 
     # Transform input
