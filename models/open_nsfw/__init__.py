@@ -85,12 +85,11 @@ def run(pixels):
     image_data = []
     idx = 0
     if len(pixels) != (256*256*3):
+        print len(pixels)
         return -1
 
-    print len(pixels)
-
-    for x in range(len(pixels)):
-        if x + 1 % 3 == 0:
+    for x in range(len(pixels) - 3):
+        if ((x + 1) % 3) == 0:
             image_data.append((pixels[x], pixels[x + 1], pixels[x + 2]))
 
     image = Image.new('RGB', (256, 256))
