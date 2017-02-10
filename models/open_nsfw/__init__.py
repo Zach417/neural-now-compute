@@ -6,14 +6,13 @@ Please see LICENSE file in the project root for terms.
 """
 
 import numpy as np
-import urllib
 import os
 import sys
 import argparse
 import glob
 import time
-from PIL import Image
 from StringIO import StringIO
+from PIL import Image
 sys.path.remove('/home/ec2-user/src/caffe/python')
 sys.path.append('/home/ec2-user/src/caffe_cpu/python')
 import caffe
@@ -30,10 +29,8 @@ def resize_image(data, sz=(256, 256)):
     :returns bytearray:
         A byte array with the resized image
     """
-    img_data = str(data)
-    im = Image.open(StringIO(img_data))
-    if im.mode != "RGB":
-        im = im.convert('RGB')
+    im = Image.new('RGB', sz)
+    im.putdata(data)
     imr = im.resize(sz, resample=Image.BILINEAR)
     fh_im = StringIO()
     imr.save(fh_im, format='JPEG')
@@ -82,11 +79,23 @@ def caffe_preprocess_and_compute(pimg, caffe_transformer=None, caffe_net=None,
     else:
         return []
 
-def run(fileURL):
+def run(pixels):
     pycaffe_dir = os.path.dirname(__file__)
 
-    fd = urllib.urlopen(fileURL)
-    image_data = fd.read()
+    image_data = []
+    idx = 0
+    if len(pixels) != (256*256*3):
+        return -1
+
+    print len(pixels)
+
+    for x in range(len(pixels)):
+        if x + 1 % 3 == 0:
+            image_data.append((pixels[x], pixels[x + 1], pixels[x + 2]))
+
+    image = Image.new('RGB', (256, 256))
+    image.putdata(image_data)
+    image_data = image.getdata()
 
     # Pre-load caffe model
     model_def = '/home/ec2-user/server/models/open_nsfw/deploy.prototxt'
@@ -107,52 +116,6 @@ def run(fileURL):
     # Scores is the array containing SFW / NSFW image probabilities
     # scores[1] indicates the NSFW probability
     return scores[1]
-
-def main(argv):
-    pycaffe_dir = os.path.dirname(__file__)
-
-    parser = argparse.ArgumentParser()
-    # Required arguments: input file.
-    parser.add_argument(
-        "input_file",
-        help="Path to the input image file"
-    )
-
-    # Optional arguments.
-    parser.add_argument(
-        "--model_def",
-        help="Model definition file."
-    )
-    parser.add_argument(
-        "--pretrained_model",
-        help="Trained model weights file."
-    )
-
-    args = parser.parse_args()
-    #image_data = open(args.input_file).read()
-    fd = urllib.urlopen(args.input_file)
-    image_data = fd.read()
-
-    # Pre-load caffe model.
-    nsfw_net = caffe.Net(args.model_def,  # pylint: disable=invalid-name
-        args.pretrained_model, caffe.TEST)
-
-    # Load transformer
-    # Note that the parameters are hard-coded for best results
-    caffe_transformer = caffe.io.Transformer({'data': nsfw_net.blobs['data'].data.shape})
-    caffe_transformer.set_transpose('data', (2, 0, 1))  # move image channels to outermost
-    caffe_transformer.set_mean('data', np.array([104, 117, 123]))  # subtract the dataset-mean value in each channel
-    caffe_transformer.set_raw_scale('data', 255)  # rescale from [0, 1] to [0, 255]
-    caffe_transformer.set_channel_swap('data', (2, 1, 0))  # swap channels from RGB to BGR
-
-    # Classify.
-    scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
-
-    # Scores is the array containing SFW / NSFW image probabilities
-    # scores[1] indicates the NSFW probability
-    print "NSFW score:  " , scores[1]
-
-
 
 if __name__ == '__main__':
     main(sys.argv)

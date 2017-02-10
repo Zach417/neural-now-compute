@@ -7,17 +7,21 @@ import argparse
 import re
 import cgi
 import models.open_nsfw as nsfw
+import ast
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
-  def do_GET(self):
-    if None != re.search('/api/v1/run/*', self.path):
+  def do_POST(self):
+    if None != re.search('/open-nsfw/*', self.path):
       self.send_response(200)
       self.send_header('Content-Type', 'application/json')
       self.end_headers()
 
-      img_url = parse_qs(urlparse(self.path).query)['url'][0]
-      yHat = nsfw.run(img_url)
-      self.wfile.write({"prediction":yHat})
+      content_len = int(self.headers.getheader('content-length', 0))
+      post_body = self.rfile.read(content_len)
+      input = ast.literal_eval(post_body)
+      yHat = nsfw.run(input)
+
+      self.wfile.write("{\"prediction\":%s}" % yHat)
     else:
       self.send_response(403)
       self.send_header('Content-Type', 'application/json')
